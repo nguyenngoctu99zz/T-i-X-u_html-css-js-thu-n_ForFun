@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Tài Xỉu</title>
+    <link rel="stylesheet" href="bet.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2c3e50;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        header {
+            margin-bottom: 20px;
+        }
+
+        .game {
+            background-color: #34495e;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .money, .bet {
+            margin-bottom: 20px;
+        }
+
+        .bet input {
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        .choices {
+            margin-bottom: 20px;
+        }
+
+        .choice {
+            background-color: #3498db;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 10px;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .choice:hover {
+            background-color: #2980b9;
+        }
+
+        .result {
+            font-size: 24px;
+        }
+
+        #timer {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .dice-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .dish {
+            width: 200px;
+            height: 200px;
+            background-color: #ecf0f1;
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .lid {
+            width: 220px;
+            height: 220px;
+            background-color: #7f8c8d;
+            border-radius: 50%;
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: opacity 0.5s;
+        }
+
+        .lid.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .dice img {
+            width: 50px;
+            height: 50px;
+            margin: 0 10px;
+        }
+
+        .actions {
+            margin-top: 20px;
+        }
+
+        .action {
+            background-color: #e74c3c;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 10px;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .action:hover {
+            background-color: #c0392b;
+        }
+    </style>
+</head>
+
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Tài Xỉu Cân Tất</h1>
+        </header>
+        <main>
+            <div class="game">
+                <div class="money">
+                    <span>Số dư: </span><span id="current-money">1000</span> VND
+                </div>
+                <div class="bet">
+                    <input type="number" id="bet-amount" placeholder="Số tiền bạn muốn cược">
+                </div>
+                
+                <div class="choices">
+                    <button id="tai" class="choice">Tài</button>
+                    <button id="xiu" class="choice">Xỉu</button>
+                </div>
+
+                <div class="result">
+                    <div id="timer">10</div>
+                    <div id="result"></div>  
+                    <div class="dice-container">
+                        <div class="dish">
+                            <div class="dice">
+                                <img id="dice1" src="dice1.png" alt="Dice 1">
+                                <img id="dice2" src="dice1.png" alt="Dice 2">
+                                <img id="dice3" src="dice1.png" alt="Dice 3">
+                            </div>
+                        </div>
+                        <div class="lid" id="lid">
+                            <img src="bat.png" alt="">
+                        </div>
+                    </div>
+                    <div class="ketQua" id="ketQua"></div>
+                </div>
+
+                <div class="actions">
+                    <button id="continue" class="action">Tiếp tục</button>
+                    <button id="cancel" class="action">Hủy đặt</button>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script>
+        let timerElement = document.getElementById('timer');
+        let resultElement = document.getElementById('result');
+        let taiButton = document.getElementById('tai');
+        let xiuButton = document.getElementById('xiu');
+        let currentMoneyElement = document.getElementById('current-money');
+        let betAmountElement = document.getElementById('bet-amount');
+        let dice1Element = document.getElementById('dice1');
+        let dice2Element = document.getElementById('dice2');
+        let dice3Element = document.getElementById('dice3');
+        let continueButton = document.getElementById('continue');
+        let cancelButton = document.getElementById('cancel');
+        let ketQuaElement = document.getElementById('ketQua');
+        let lidElement = document.getElementById('lid');
+        let timer = 10;
+        let interval;
+        let userChoice = null;
+        let currentMoney = 1000;
+        let viewResultTime = 5;
+        let isDragging = false;
+        let startY = 0;
+
+        function startGame() {
+            timer = 10;
+            userChoice = null;
+            resultElement.textContent = 'Chọn Tài hoặc Xỉu';
+            dice1Element.src = `images/dice1.png`;
+            dice2Element.src = `images/dice1.png`;
+            dice3Element.src = `images/dice1.png`;
+            lidElement.classList.remove('hidden');
+            interval = setInterval(() => {
+                timer--;
+                timerElement.textContent = timer;
+                if (timer === 0) {
+                    clearInterval(interval);
+                    showResult();
+                }
+            }, 1000);
+        }
+
+        function showResult() {
+            let dice1 = Math.floor(Math.random() * 6) + 1;
+            let dice2 = Math.floor(Math.random() * 6) + 1;
+            let dice3 = Math.floor(Math.random() * 6) + 1;
+            let total = dice1 + dice2 + dice3;
+            let result = total > 10 ? 'Tài' : 'Xỉu';
+
+            dice1Element.src = `images/dice${dice1}.png`;
+            dice2Element.src = `images/dice${dice2}.png`;
+            dice3Element.src = `images/dice${dice3}.png`;
+
+            lidElement.classList.remove('hidden');
+            lidElement.addEventListener('mousedown', onMouseDown);
+
+            let betAmount = parseInt(betAmountElement.value);
+            if (isNaN(betAmount) || betAmount <= 0) {
+                alert('Vui lòng nhập số tiền cược hợp lệ!');
+                return;
+            }
+
+            if (userChoice) {
+                if (userChoice === result) {
+                    currentMoney += betAmount;
+                     alert('Bạn đã thắng!');
+                } else {
+                    currentMoney -= betAmount;
+                     alert('Bạn đã thua!');
+                }
+                currentMoneyElement.textContent = currentMoney;
+            } else {
+                alert('Bạn chưa chọn!');
+            }
+        }
+
+        function onMouseDown(event) {
+            isDragging = true;
+            startY = event.clientY;
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        }
+
+        function onMouseMove(event) {
+            if (!isDragging) return;
+            let currentY = event.clientY;
+            let diffY = startY - currentY;
+            if (diffY > 5) { // Vuốt lên ít nhất 5px để mở nắp
+                lidElement.classList.add('hidden');
+                ketQuaElement.textContent = `Kết quả: ${result} (${dice1} + ${dice2} + ${dice3} = ${total})`;
+                setTimeout(() => {
+                    startGame();
+                }, viewResultTime * 1000);
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+            }
+        }
+
+        function onMouseUp() {
+            isDragging = false;
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        }
+
+        taiButton.addEventListener('click', () => {
+            userChoice = 'Tài';
+            resultElement.textContent = 'Bạn đã chọn Tài';
+        });
+
+        xiuButton.addEventListener('click', () => {
+            userChoice = 'Xỉu';
+            resultElement.textContent = 'Bạn đã chọn Xỉu';
+        });
+
+        continueButton.addEventListener('click', () => {
+            clearInterval(interval);
+            startGame();
+        });
+
+        cancelButton.addEventListener('click', () => {
+            clearInterval(interval);
+            userChoice = null;
+            resultElement.textContent = 'Bạn đã hủy đặt lệnh';
+            timerElement.textContent = '10';
+            dice1Element.src = `images/dice1.png`;
+            dice2Element.src = `images/dice1.png`;
+            dice3Element.src = `images/dice1.png`;
+        });
+
+        startGame();
+    </script>
+</body>
+</html>
